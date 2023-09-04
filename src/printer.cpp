@@ -1,7 +1,33 @@
 #include "printer.h"
 #include "framework/dbg.h"
 
+#include <filesystem>
+
 namespace yunolex {
+
+Printer::Printer(std::string input, std::string output) {
+    std::ifstream infile;
+    auto rp = std::filesystem::canonical("/proc/self/exe").parent_path().append(input);
+    infile.open(rp.c_str());
+
+    if ( infile.bad() ) {
+        throw PrinterException("Could not open lexer template file: " + input);
+    }
+
+    _outfile.open(output);
+
+    if ( _outfile.bad() ) {
+        infile.close();
+        throw PrinterException("Could not open specified output file: " + output);
+    }
+
+    std::string c;
+    while ( std::getline(infile, c) ) {
+        _outfile << c << std::endl;
+    }
+
+    infile.close();
+}
 
 Printer* Printer::instance(Language lang, std::string output) {
     if ( lang == Language::CPP ) return new CppPrinter(output);

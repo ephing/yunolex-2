@@ -44,28 +44,7 @@ public:
 
     virtual void outputAutomata(std::map<std::string, std::vector<AutomataInfo*>>*) = 0;
 protected:
-    explicit Printer(std::string input, std::string output) {
-        std::ifstream infile;
-        infile.open(input);
-
-        if ( infile.bad() ) {
-            throw PrinterException("Could not open lexer template file: " + input);
-        }
-
-        _outfile.open(output);
-
-        if ( _outfile.bad() ) {
-            infile.close();
-            throw PrinterException("Could not open specified output file: " + output);
-        }
-
-        std::string c;
-        while ( std::getline(infile, c) ) {
-            _outfile << c << std::endl;
-        }
-
-        infile.close();
-    }
+    explicit Printer(std::string input, std::string output);
     virtual void end() = 0;
 
     std::ofstream _outfile;
@@ -73,7 +52,7 @@ protected:
 
 class CppPrinter final : public Printer {
 public:
-    explicit CppPrinter(std::string output) : Printer("/home/joemama/Documents/personalproject/yunolex2/src/lexers/lexcpp.h", output) {} 
+    explicit CppPrinter(std::string output) : Printer("src/lexers/lexcpp.h", output) {} 
 
     void outputAutomata(std::map<std::string, std::vector<AutomataInfo*>>* automata) override;
 protected:

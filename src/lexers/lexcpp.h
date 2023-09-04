@@ -9,8 +9,7 @@
 #include <istream>
 #include <iostream>
 
-// replace "\x18" when compiling
-#define OUTERSCOPE "\x18"
+#define OUTERSCOPE "topscope"
 
 namespace Lexer {
 
