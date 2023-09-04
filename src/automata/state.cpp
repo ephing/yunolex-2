@@ -1,4 +1,3 @@
-#include <bits/stdc++.h>
 #include "state.h"
 
 namespace yunolex {
