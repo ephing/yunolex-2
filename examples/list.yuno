@@ -1,0 +1,30 @@
+[opensqbracket]
+regex = \[
+enter = inlist
+leave = $
+
+[closesqbracket]
+regex = \]
+in = inlist
+leave = inlist comma
+enter = $
+
+[number]
+regex = [0-9]+
+in = inlist
+enter = comma
+
+[comma]
+regex = ,
+in = comma
+leave = comma
+
+[space]
+regex = \s
+in = $ inlist
+skip = true
+
+[wrongclosebracket]
+regex = \}
+in = inlist
+error = "Wrong close bracket \"}\""

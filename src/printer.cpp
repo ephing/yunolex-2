@@ -1,5 +1,6 @@
 #include "printer.h"
 #include "framework/dbg.h"
+#include "parser/parse.h"
 
 #include <filesystem>
 
@@ -34,41 +35,55 @@ Printer* Printer::instance(Language lang, std::string output) {
     throw PrinterException("Somehow you chose a language that doesn't exist");
 }
 
-void CppPrinter::outputAutomata(std::map<std::string, std::vector<AutomataInfo*>>* automata) {
-    for ( auto scope : *automata ) {
-        _outfile << "\t\t{ \"" << scope.first << "\",\n\t\t\tstd::vector<Automaton*>({\n" << std::endl;
-        for ( auto a : scope.second ) {
-            _outfile << "\t\t\t\tnew Automaton(" << std::endl;
-            // token name
-            _outfile << "\t\t\t\t\t\"" << a->tokenName << "\"," << std::endl;
-            // start state
-            _outfile << "\t\t\t\t\t\"" << a->automaton->startState()->toString() << "\"," << std::endl;
-            // transition table
-            _outfile << "\t\t\t\t\t{";
-            bool b = false;
-            for ( auto s : *a->automaton->states() ) {
-                if ( s->outbound().empty() ) continue;
-                if ( b ) _outfile << " ";
-                _outfile << "{\"" << s->toString() << "\",{";
-                for ( auto t : s->outbound() ) {
-                    _outfile << "{\'" << t->symbol()[0] << "\',\"" << t->dest()->toString() << "\"},";
-                }
-                _outfile << "}},\n\t\t\t\t\t";
-                b = true;
+void CppPrinter::outputAutomata(std::map<Token*, Automata*>* automata) {
+    for ( auto a : *automata ) {
+        _outfile << "\t\tnew Automaton(" << std::endl;
+        // token name
+        _outfile << "\t\t\t\"" << a.first->Name << "\"," << std::endl;
+        // start state
+        _outfile << "\t\t\t\"" << a.second->startState()->toString() << "\"," << std::endl;
+        // transition table
+        _outfile << "\t\t\t{";
+        bool b = false;
+        for ( auto s : *a.second->states() ) {
+            if ( s->outbound().empty() ) continue;
+            if ( b ) _outfile << " ";
+            _outfile << "{\"" << s->toString() << "\",{";
+            for ( auto t : s->outbound() ) {
+                _outfile << "{\'" << t->symbol() << "\',\"" << t->dest()->toString() << "\"},";
             }
-            _outfile << "}," << std::endl;
-            // final states
-            _outfile << "\t\t\t\t\t{";
-            for ( auto f : a->automaton->finstates() ) {
-                _outfile << "\"" << f->toString() << "\",";
-            }
-            _outfile << "}," << std::endl;
-            // action
-            _outfile << "\t\t\t\t\t{ " << a->action.first << ", \"" << a->action.second << "\" }\n\t\t\t\t),\n";          
+            _outfile << "}}," << std::endl << "\t\t\t";
+            b = true;
         }
-        _outfile << "\t\t\t})\n\t\t}," << std::endl;
+        _outfile << "}," << std::endl;
+        // final states
+        _outfile << "\t\t\t{";
+        for ( auto f : a.second->finstates() ) {
+            _outfile << "\"" << f->toString() << "\",";
+        }
+        _outfile << "}," << std::endl;
+        // in
+        printSet(a.first->In);
+        _outfile << "}," << std::endl;
+        // enter
+        printSet(a.first->Enter);
+        _outfile << "}," << std::endl;
+        // leave
+        printSet(a.first->Leave);
+        _outfile << "}," << std::endl; 
+        _outfile << "\t\t\t" << (a.first->Skip ? "true, " : "false, ") 
+            << (a.first->Error ? "true, \"" + a.first->ErrorMsg + "\"" : "false, \"\"") << std::endl;
+        _outfile << "\t\t)," << std::endl;
     }
-    end();
+    _outfile << "\t\t})" << std::endl << "\t) {}" << std::endl << "};"
+        << std::endl << std::endl << "}" << std::endl << std::endl << "#endif" << std::endl;
+}
+
+void CppPrinter::printSet(std::set<std::string>& set) {
+    _outfile << "\t\t\t{";
+    for ( auto i : set ) {
+        _outfile << "\"" << i << "\",";
+    }
 }
 
 }

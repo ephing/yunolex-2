@@ -5,24 +5,27 @@
 #include <string>
 #include <vector>
 #include <set>
-#include <stack>
 #include <istream>
-#include <iostream>
 
-#define OUTERSCOPE "topscope"
+#define OUTERSCOPE "$"
 
 namespace Lexer {
 
 struct Automaton {
     Automaton(std::string token, std::string start, std::map<std::string, std::map<char, std::string>> transitions, 
-        std::set<std::string> fins, std::pair<std::size_t, std::string> action) : 
-        _token(std::move(token)), _start(std::move(start)), _current(_start), 
-        _transitions(std::move(transitions)), _finalStates(std::move(fins)), _action(std::move(action)), _dead(false) {}
+        std::set<std::string> fins, std::set<std::string> in, std::set<std::string> enter, std::set<std::string> leave, bool skip, bool error, std::string errormsg) : 
+        _token(std::move(token)), _start(std::move(start)), _current(_start),
+        _transitions(std::move(transitions)), _finalStates(std::move(fins)), _in(std::move(in)), 
+        _enter(std::move(enter)), _leave(std::move(leave)), _dead(false), _skip(skip), _error(error), _errorMsg(errormsg) {}
     std::string _token, _start, _current;
     std::map<std::string, std::map<char, std::string>> _transitions;
-    std::set<std::string> _finalStates;
-    std::pair<std::size_t, std::string> _action;
+    const std::set<std::string> _finalStates;
+    const std::set<std::string> _in;
+    const std::set<std::string> _enter;
+    const std::set<std::string> _leave;
     bool _dead;
+    const bool _skip, _error;
+    const std::string _errorMsg;
 };
 
 struct Position final {
@@ -71,15 +74,23 @@ struct Token {
 
 class ILexer {
 protected:
-    ILexer(std::map<std::string, std::vector<Automaton*>> automata) : _scope(std::stack<std::string>()), _automata(std::move(automata)), _bestFit({ 0, { nullptr, nullptr } }), _position(Position(1,1,0,0)), _text(""), _index(0) {
-        _scope.push(OUTERSCOPE);
+    ILexer(std::vector<Automaton*> automata) : _scope(std::set<std::string>()), _automata(std::move(automata)), _bestFit({ 0, { nullptr, nullptr } }), _position(Position(1,1,0,0)), _text(""), _index(0) {
+        _scope.insert(OUTERSCOPE);
     }
 
-    void readCharacter(char c) {
-        std::size_t dead = 0;
+    bool readCharacter(char c) {
+        std::size_t dead = 0, inscope = 0;
+        bool ret = false;
         _text += c;
-        for ( auto i = _automata.at(_scope.top()).rbegin(); i != _automata.at(_scope.top()).rend(); i++ ) {
+        for ( auto i = _automata.rbegin(); i != _automata.rend(); i++ ) {
             auto a = *i;
+            
+            std::set<std::string> intersection;
+            std::set_intersection(a->_in.begin(), a->_in.end(), _scope.begin(), _scope.end(), std::inserter(intersection, intersection.begin()));
+
+            if ( intersection.size() == 0 ) continue; // skip machines that aren't in a current scope
+            inscope++;
+
             if ( !a->_dead && a->_transitions.count(a->_current) && a->_transitions.at(a->_current).count(c) ) {
                 a->_current = a->_transitions.at(a->_current).at(c);
                 if ( a->_finalStates.count(a->_current) ) {
@@ -91,12 +102,14 @@ protected:
                 dead++;
             }
         }
-        if ( dead == _automata.at(_scope.top()).size() ) {
+        if ( dead == inscope ) {
             if ( _bestFit.second.first == nullptr ) {
                 // TODO: experiment with some kind of recovery
                 throw LexError(_text, &_position);
             } else {
-                _tokenStream.push_back(_bestFit.second.first);
+                ret = true;
+                if (!_bestFit.second.second->_skip) _tokenStream.push_back(_bestFit.second.first);
+                if (_bestFit.second.second->_error) throw LexError(_bestFit.second.second->_errorMsg, &_position);
                 _index = _bestFit.first;
                 _position = Position(
                     _bestFit.second.first->Pos.ELine, 
@@ -105,32 +118,29 @@ protected:
                     _bestFit.second.first->Pos.ECol
                 );
                 _text = "";
-                switch ( _bestFit.second.second->_action.first ) {
-                case 0:
-                    break;
-                case 1:
-                    _scope.push(_bestFit.second.second->_action.second);
-                    break;
-                case 2:
-                    _scope.pop();
+                for ( auto e : _bestFit.second.second->_enter ) {
+                    if ( !_scope.count(e) ) _scope.insert(e);
+                }
+                for ( auto e : _bestFit.second.second->_leave ) {
+                    auto f = _scope.find(e);
+                    if ( f != _scope.end() ) _scope.erase(f);
                 }
             }
             reset();
         }
+        return ret;
     }
 
     void reset() {
-        for ( auto scope : _automata ) {
-            for ( auto a : scope.second ) {
-                a->_current = a->_start;
-                a->_dead = false;
-            }
+        for ( auto a: _automata ) {
+            a->_current = a->_start;
+            a->_dead = false;
         }
         _bestFit = { _index, { nullptr, nullptr } };
     }
 
-    std::stack<std::string> _scope;
-    std::map<std::string, std::vector<Automaton*>> _automata;
+    std::set<std::string> _scope;
+    std::vector<Automaton*> _automata;
     std::pair<std::size_t, std::pair<Token*, Automaton*>> _bestFit;
     std::vector<Token*> _tokenStream;
 
@@ -143,7 +153,6 @@ class Lexer final : public ILexer {
 public:
     static std::vector<Token*> lex(std::istream& file) {
         Lexer lex;
-        std::size_t ssize = 0;
 
         while ( file.peek() != -1 ) {
             char c = file.get();
@@ -153,10 +162,9 @@ public:
             } else {
                 lex._position.ECol++;
             }
-            lex.readCharacter(c);
-            if ( lex._tokenStream.size() != ssize ) {
+            
+            if ( lex.readCharacter(c) ) {
                 file.seekg(lex._index + 1);
-                ssize = lex._tokenStream.size();
             }
             lex._index++;
         }
@@ -164,11 +172,11 @@ public:
         if ( lex._bestFit.second.first == nullptr ) {
             throw LexError(lex._text, &lex._position);
         } else {
-            lex._tokenStream.push_back(lex._bestFit.second.first);
+            if (!lex._bestFit.second.second->_skip) lex._tokenStream.push_back(lex._bestFit.second.first);
+            if (lex._bestFit.second.second->_error) throw LexError(lex._bestFit.second.second->_errorMsg, &lex._position);
         }
 
         return lex._tokenStream;
     }
 private:
-    Lexer() : ILexer({
-        
+    Lexer() : ILexer(std::vector<Automaton*>({

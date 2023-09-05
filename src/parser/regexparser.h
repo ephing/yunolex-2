@@ -10,6 +10,7 @@ namespace yunolex {
 
 class ParserException final : public std::exception {
 public:
+    ParserException(std::string what) : _what(what) {}
     ParserException(std::string what, int l, int c) : _what(what + "[" + std::to_string(l) + "," + std::to_string(c) + "]") {}
     const char* what() const noexcept override { return _what.c_str(); }
 private:
@@ -178,9 +179,9 @@ private:
         if ( c == '.' ) return new Wildcard();
         if ( c == '\\' ) {
             c = _input[_index++];
-            if ( c == 'n' ) return new Symbol('\n');
-            if ( c == 't' ) return new Symbol('\t');
-            
+            if ( c == 'n' ) return new Symbol("\\n");
+            if ( c == 't' ) return new Symbol("\\t");
+            if ( c == 's' ) return new CharacterSelect({" ","\\t","\\n","\\x0B","\\f","\\r"});
         }
         return new Symbol(c);
     }
@@ -198,17 +199,23 @@ private:
             _index++;
             neg = true;
         }
-        std::set<char> options; 
+        std::set<std::string> options; 
         char prev = -1;
         while ( _input[_index] != ']' && _index != _input.size() ) {
             char c = _input[_index++];
             if ( c == '\\' ) {
                 char c2 = _input[_index++];
-                if ( c2 == 'n' ) options.insert('\n');
-                else if ( c2 == 't' ) options.insert('\t');
-                else options.insert(c2);
+                if ( c2 == 'n' ) options.insert("\\n");
+                else if ( c2 == 't' ) options.insert("\\t");
+                else {
+                    std::string s(1, c2);
+                    options.insert(s);
+                }
             } else if ( c == '-' ) {
-                if ( prev == -1 || _input[_index] == ']' ) options.insert(c);
+                if ( prev == -1 || _input[_index] == ']' ) {
+                    std::string s(1, c);
+                    options.insert(s);
+                }
                 else if ( prev > _input[_index] ) {
                     std::string msg = "Bad range: " + std::to_string(prev) + "-" + std::to_string((char)_input[_index]);
                     throw ParserException(msg, _line, _col);
@@ -216,20 +223,22 @@ private:
                 else {
                     char upper = _input[_index++];
                     for (int i = prev; i < upper + 1; i++) {
-                        options.insert(i);
+                        std::string s(1, i);
+                        options.insert(s);
                     }
                 }
             } else {
-                options.insert(c);
+                std::string s(1, c);
+                options.insert(s);
             }
             prev = c;
         }
         CharacterSelect* charsel;
         if ( neg ) {
             // get everything else
-            std::set<char> diff;
+            std::set<std::string> diff;
             Wildcard all;
-            all._options.insert('\n');
+            all._options.insert("\\n");
             std::set_difference(all._options.begin(), all._options.end(), options.begin(), options.end(), std::inserter(diff, diff.end()));
             options = diff;
         }

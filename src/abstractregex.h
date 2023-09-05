@@ -239,15 +239,18 @@ private:
 
 class Symbol final : public Node {
 public:
-    Symbol(char c) : _symbol(c) {}
+    Symbol(char c) {
+        std::string s(1, c);
+        _symbol = c;
+    }
+    Symbol(std::string c) : _symbol(c) {}
     ~Symbol() = default;
 
     Automata* automata() const override {
         auto n = new Automata(new State(false));
         State* end = new State(true);
         n->assumeState(end);
-        std::string s(1, _symbol);
-        n->startState()->addEdge(end, s);
+        n->startState()->addEdge(end, _symbol);
         return n;
     }
 
@@ -256,19 +259,19 @@ public:
     }
 
     std::string toString() const override {
-        std::string s(1, _symbol);
-        return s;
+        return _symbol;
     }
 protected:
-    char _symbol;
+    std::string _symbol;
 };
 
 class CharacterSelect : public Node {
 public:
-    explicit CharacterSelect(std::set<char> options) : _options(std::move(options)) {}
+    explicit CharacterSelect(std::set<std::string> options) : _options(std::move(options)) {}
     explicit CharacterSelect(char low, char high) {
         for ( char i = low; i < high + 1; i++ ) {
-            _options.insert(i);
+            std::string s(1, i);
+            _options.insert(s);
         }
     }
 
@@ -277,8 +280,7 @@ public:
         auto end = new State(true);
         n->assumeState(end);
         for ( auto s : _options ) {
-            std::string ss(1, s);
-            n->startState()->addEdge(end, ss);
+            n->startState()->addEdge(end, s);
         }
         return n;
     }
@@ -297,7 +299,7 @@ public:
         return "[" + op + "]";
     }
 protected:
-    std::set<char> _options;
+    std::set<std::string> _options;
 
     friend RegexParser;
 };
@@ -305,7 +307,7 @@ protected:
 class Wildcard final : public CharacterSelect {
 public:
     explicit Wildcard() : CharacterSelect(32, 126) {
-        _options.insert('\t');
+        _options.insert("\\t");
     }
 
     std::string name() const override {

@@ -3,7 +3,6 @@
 #include <cstring>
 
 #include "parser/parse.h"
-#include "parser/regexparser.h"
 #include "printer.h"
 
 void printUsage() {
@@ -34,10 +33,10 @@ int main(int argc, char** argv) {
 
     // Parse input file
     // tokeninfo maps scopes to the token specs within that scope
-    std::map<std::string, std::vector<yunolex::Token*>>* tokeninfo;
+    std::vector<yunolex::Token*>* tokeninfo;
 
     try {
-        tokeninfo = yunolex::Parser::parseFile(input);
+        tokeninfo = yunolex::parseFile(input);
     } catch (std::runtime_error& re) {
         std::cerr << re.what() << std::endl;
         return 1;
@@ -46,21 +45,12 @@ int main(int argc, char** argv) {
 
     // create DFAs from regexes
     // automataInfo maps scopes to tokenname/automata pairs
-    std::map<std::string, std::vector<yunolex::AutomataInfo*>> automataInfo;
+    std::map<yunolex::Token*, yunolex::Automata*> automataInfo;
 
-    for ( auto scope : *tokeninfo ) {
-        automataInfo.insert({ scope.first, std::vector<yunolex::AutomataInfo*>() });
-        for ( auto token : scope.second ) {
-            auto automaton = token->regex->automata();
-            automaton->DFAify();
-            automataInfo.at(scope.first).push_back(useref(new yunolex::AutomataInfo(token->tokenName, automaton, token->action)));
-        }
-    }
-    
-    for ( auto v : *tokeninfo) {
-        interfaces::apply<yunolex::Token*>(v.second, [](yunolex::Token* v) -> void {
-            delete v;
-        });
+    for ( auto token : *tokeninfo ) {
+        auto automaton = token->Regex->automata();
+        automaton->DFAify();
+        automataInfo.insert({token, automaton});
     }
     delete tokeninfo;
     yunolex::info(std::cout, "Finished creating automata.\n");
@@ -75,9 +65,8 @@ int main(int argc, char** argv) {
         return 1;
     }
     for ( auto v : automataInfo ) {
-        interfaces::apply<yunolex::AutomataInfo*>(v.second, [](yunolex::AutomataInfo* ai) -> void {
-            delete ai;
-        });
+        delete v.first;
+        delete v.second;
     }
     yunolex::info(std::cout, "Finished creating lexer file.");
 
