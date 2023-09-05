@@ -6,7 +6,7 @@ Rewrote [this](https://github.com/ephing/yunolex) to be faster, more memory effi
 
 The basic specification of a token is as follows:
 
-```toml
+```
 [tokenname]
 regex = abc
 
@@ -16,7 +16,7 @@ regex = xyz
 
 You can prevent certain tokens from appearing in the output token stream by using the `skip` field. Writing anything other than `true` will register as false.
 
-```toml
+```
 [tokenname]
 regex = a*
 skip = true
@@ -24,7 +24,7 @@ skip = true
 
 You can tell the lexer to throw an exception upon reading certain tokens with the error field. Keep in mind that the message is pasted directly into the lexer template, so characters that need to be escaped in your source language must be escaped here too. Yunolex also expects the message to be surrounded by quotation marks.
 
-```toml
+```
 [token]
 regex = t+o+k+e+n+
 error = "This is an error"
@@ -36,7 +36,7 @@ The lexer starts in the global scope notated by the special character `$`, but t
   
 The `in`, `enter`, and `leave` fields all use space-delimited lists to specify multiple values.
 
-```toml
+```
 [token1]
 regex = 1
 in = one $
@@ -52,7 +52,7 @@ enter = one
 
 To Do list:
 
-* ~~remake input spec to be toml-esque~~
+* ~~remake input spec to be -esque~~
 * ~~redesign parser to treat scopes as separate sets rather than a stack~~
 * test/debug regex parser and error messages
 * extend to other output languages besides c++
