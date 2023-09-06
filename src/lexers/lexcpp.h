@@ -6,6 +6,7 @@
 #include <vector>
 #include <set>
 #include <istream>
+#include <algorithm>
 
 #define OUTERSCOPE "$"
 
@@ -31,7 +32,7 @@ struct Automaton {
 struct Position final {
     Position(std::size_t sLine, std::size_t eLine, std::size_t sCol, std::size_t eCol) : SLine(sLine), ELine(eLine), SCol(sCol), ECol(eCol) {}
     std::size_t SLine, ELine, SCol, ECol;
-    std::string toString() const {
+    [[nodiscard]] std::string toString() const {
         std::string out;
         out = "(L:" + std::to_string(SLine) + ":" + std::to_string(ELine) + ", C:" + std::to_string(SCol) + ":" + std::to_string(ECol) +  ")";
         return out;
@@ -49,7 +50,7 @@ struct Position final {
 class LexError final : public std::exception {
 public:
     LexError(std::string token, Position* pos) : _what("Invalid token at " + pos->toString() + ": " + token) {}
-    const char* what() const noexcept override { return _what.c_str(); }
+    [[nodiscard]] const char* what() const noexcept override { return _what.c_str(); }
 private:
     std::string _what;
 };
@@ -78,7 +79,7 @@ protected:
         _scope.insert(OUTERSCOPE);
     }
 
-    bool readCharacter(char c) {
+    [[nodiscard]] bool readCharacter(char c) {
         std::size_t dead = 0, inscope = 0;
         bool ret = false;
         _text += c;
@@ -151,7 +152,7 @@ protected:
 
 class Lexer final : public ILexer {
 public:
-    static std::vector<Token*> lex(std::istream& file) {
+    [[nodiscard]] static std::vector<Token*> lex(std::istream& file) {
         Lexer lex;
 
         while ( file.peek() != -1 ) {

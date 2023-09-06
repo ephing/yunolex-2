@@ -21,7 +21,7 @@ namespace interfaces {
         InvalidFree() = default;
         virtual ~InvalidFree() = default;
 
-        const char* what() const noexcept override { return "Attempt to free an object with 0 references"; }
+        [[nodiscard]] const char* what() const noexcept override { return "Attempt to free an object with 0 references"; }
     };
 
     class BadReduce : public std::exception {
@@ -29,7 +29,7 @@ namespace interfaces {
         BadReduce() = default;
         virtual ~BadReduce() = default;
 
-        const char* what() const noexcept override { return "Attempt to reduce an iterable with 0 elements."; }
+        [[nodiscard]] const char* what() const noexcept override { return "Attempt to reduce an iterable with 0 elements."; }
     };
 
 
@@ -66,7 +66,7 @@ namespace interfaces {
             Reference::_references.erase(this);
         }
 
-        std::size_t count() const {
+        [[nodiscard]] std::size_t count() const {
             return _count;
         }
 
@@ -80,7 +80,7 @@ namespace interfaces {
             if ( _count == 0 ) delete this;
         }
 
-        static bool exists(Reference* ref) {
+        [[nodiscard]] static bool exists(Reference* ref) {
             return _references.contains(ref);
         }
 

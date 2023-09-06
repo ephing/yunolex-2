@@ -31,7 +31,7 @@ public:
         if ( state->isFinal() ) _finStates.insert(state);
     }
 
-    static IState* containsState(std::set<IState*>& states, IState* state) {
+    [[nodiscard]] static IState* containsState(std::set<IState*>& states, IState* state) {
         for (auto s : states) {
             if (*s == *state) return s;
         }
@@ -39,7 +39,7 @@ public:
     }
 
     template <typename T>
-    std::set<T> map(std::function<T(IState*)> callback) {
+    [[nodiscard]] std::set<T> map(std::function<T(IState*)> callback) {
         std::set<T> nstates;
         for (auto s : *_states) {
             nstates.insert(callback(s));
@@ -52,11 +52,11 @@ public:
         _finStates.clear();
     }
 
-    IState* startState() const { return _startState; }
+    [[nodiscard]] IState* startState() const { return _startState; }
 
-    std::set<IState*>* states() const { return _states; }
+    [[nodiscard]] std::set<IState*>* states() const { return _states; }
 
-    std::set<IState*> finstates() const { return _finStates; }
+    [[nodiscard]] std::set<IState*> finstates() const { return _finStates; }
 
     // creates dot file graphviz output
     void dot(std::ostream& out) const;

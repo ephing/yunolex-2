@@ -52,11 +52,11 @@ enter = one
 
 To Do list:
 
-* ~~remake input spec to be -esque~~
+* ~~remake input spec to be toml-esque~~
 * ~~redesign parser to treat scopes as separate sets rather than a stack~~
 * test/debug regex parser and error messages
 * extend to other output languages besides c++
 * add helpful cmd-line arguments
 * add shortcuts for specifying scopes in the spec (e.g. a wildcard)
 * add error checking for values in scope lists
-    - check `in` and `leave` fields for scopes that are never entered
+  * check `in` and `leave` fields for scopes that are never entered

@@ -18,7 +18,7 @@ class PrinterException : public std::exception {
 public:
     PrinterException(std::string message) : _message(message) {}
 
-    const char* what() const noexcept override { return _message.c_str(); }
+    [[nodiscard]] const char* what() const noexcept override { return _message.c_str(); }
 private:
     std::string _message;
 };
@@ -29,7 +29,7 @@ public:
         _outfile.close();
     }
 
-    static Printer* instance(Language lang, std::string output);
+    [[nodiscard]] static Printer* instance(Language lang, std::string output);
 
     virtual void outputAutomata(std::map<Token*, Automata*>*) = 0;
 protected:

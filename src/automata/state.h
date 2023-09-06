@@ -16,7 +16,7 @@ public:
     InvalidStateSet() = default;
     virtual ~InvalidStateSet() = default;
 
-    const char* what() const noexcept override { return "Attempt to reduce a StateSet with 0 members"; }
+    [[nodiscard]] const char* what() const noexcept override { return "Attempt to reduce a StateSet with 0 members"; }
 };
 
 class IState : public interfaces::Stringable, public interfaces::Reference {
@@ -73,8 +73,8 @@ public:
 protected:
     std::vector<IState*> _states;
 private:
-    static std::vector<IState*> __flatten(std::vector<IState*>&);
-    static bool __compareStates(IState*, IState*);
+    [[nodiscard]] static std::vector<IState*> __flatten(std::vector<IState*>&);
+    [[nodiscard]] static bool __compareStates(IState*, IState*);
 };
 
 class Transition : public interfaces::Stringable, public interfaces::Reference {
@@ -83,7 +83,7 @@ public:
 
     ~Transition() = default;
 
-    std::string toString() const override {
+    [[nodiscard]] std::string toString() const override {
         return _src->toString() + " ->" + _symbol + " " + _dest->toString();
     }
 
