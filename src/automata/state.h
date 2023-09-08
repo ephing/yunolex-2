@@ -30,6 +30,8 @@ public:
     void addEdge(IState*, std::string);
     void removeEdge(Transition*);
     [[nodiscard]] bool containsEdge(IState*, std::string) const;
+    [[nodiscard]] IState* nextState(std::string) const;
+    [[nodiscard]] bool semanticallyEquivalent(IState*) const;
     void setFinal(bool f) { _final = f; }
     [[nodiscard]] bool operator<(IState& other) { return _id.substr(1).compare(other._id.substr(1)) < 0; }
     [[nodiscard]] bool operator==(IState& other) { return _id.substr(1) == other._id.substr(1); }

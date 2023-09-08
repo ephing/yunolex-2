@@ -66,6 +66,8 @@ public:
     // Banishes nondeterminism
     void DFAify();
 
+    void minimize();
+
     // concatenates automata (invalidates input automata)
     void concatenateSubsume(Automata*);
 

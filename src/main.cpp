@@ -60,6 +60,7 @@ int main(int argc, char** argv) {
     for ( auto token : *tokeninfo ) {
         auto automaton = token->Regex->automata();
         automaton->DFAify();
+        automaton->minimize();
         automataInfo.insert({token, automaton});
     }
     delete tokeninfo;

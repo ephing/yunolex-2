@@ -124,6 +124,41 @@ void Automata::concatenateSubsume(Automata* other) {
     assumeStates(other->states());
 }
 
+void Automata::minimize() {
+    bool done;
+    do {
+        done = true;
+        std::set<IState*> remove;
+
+        for ( auto s1 : *_states ) {
+            for ( auto s2 : *_states ) {
+                if ( s2 == _startState || s1 == s2 || (s1 < s2 && s1 != _startState) ) continue;
+                if ( s1->semanticallyEquivalent(s2) ) {
+                    done = false;
+                    remove.insert(s2);
+
+                    // its goin crazy around here parts, remapping incoming edges
+                    for ( auto is : *_states ) {
+                        if ( is == s2 ) continue;
+                        for ( auto t : is->outbound() ) {
+                            if ( t->dest() == s2 ) {
+                                if ( is != s1 ) is->addEdge(s1, t->symbol());
+                                is->removeEdge(t);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        for ( auto s : remove ) {
+            _states->erase(s);
+            if ( s->isFinal() ) _finStates.erase(s);
+            freeref(s);
+        }
+    } while ( !done );
+}
+
 // void Automata::__removeDead() {
 //     auto states = *_states;
 //     for ( auto s : states ) {

@@ -27,6 +27,31 @@ bool IState::containsEdge(IState* dest, std::string sym) const {
     return false;
 }
 
+IState* IState::nextState(std::string input) const {
+    for ( auto t : _outbound ) {
+        if ( t->symbol() == input ) return t->dest();
+    }
+    return nullptr;
+}
+
+bool IState::semanticallyEquivalent(IState* other) const {
+    if ( other == nullptr || _final != other->_final ) return false;
+    if ( _id == other->_id ) return true;
+    for ( auto t : _outbound ) {
+        auto os = other->nextState(t->symbol());
+        if ( os == this && t->dest() == other ) continue; // this is loop
+        if ( os == other && t->dest() == this ) continue; // this is also loop
+        if ( !t->dest()->semanticallyEquivalent(os) ) return false;
+    }
+    for ( auto t : other->_outbound ) {
+        auto s = nextState(t->symbol());
+        if ( s == this && t->dest() == other ) continue;
+        if ( s == other && t->dest() == this ) continue;
+        if ( !t->dest()->semanticallyEquivalent(s) ) return false;
+    }
+    return true;
+}
+
 std::set<const IState*> IState::transitiveReflexiveClosure(bool epsilons) const {
     std::set<const IState*> visited;
     __trClosure(visited, epsilons);
