@@ -8,6 +8,7 @@ IState::~IState() {
 
 void IState::addEdge(IState* dest, std::string sym) {
     Transition* t;
+    if ( containsEdge(dest, sym) ) return;
     if (sym == EPS) t = new EpsilonTransition(this, dest);
     else t = new Transition(sym, this, dest);
     _outbound.insert(useref(t));

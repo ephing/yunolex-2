@@ -142,7 +142,7 @@ void Automata::minimize() {
                         if ( is == s2 ) continue;
                         for ( auto t : is->outbound() ) {
                             if ( t->dest() == s2 ) {
-                                if ( is != s1 ) is->addEdge(s1, t->symbol());
+                                is->addEdge(s1, t->symbol());
                                 is->removeEdge(t);
                             }
                         }
