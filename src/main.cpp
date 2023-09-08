@@ -6,7 +6,10 @@
 #include "printer.h"
 
 void printUsage() {
-    std::cerr << "yunolex <OPTIONS> <filename>" << std::endl;
+    std::cout << "usage: yunolex [-h] [-o FILE] [-l LANG] INPUT" << std::endl;
+    std::cout << "  -h, --help  show this help menu and exit" << std::endl;
+    std::cout << "  -o FILE     name output file as FILE" << std::endl;
+    //std::cout << "  -l LANG     change output language to LANG (supports CPP)" << std::endl;
 }
 
 int main(int argc, char** argv) {
@@ -23,6 +26,13 @@ int main(int argc, char** argv) {
         if ( !strcmp(argv[i], "-h") || !strcmp(argv[1], "--help") ) {
             printUsage();
             return 0;
+        } else if ( !strcmp(argv[i], "-o") ) {
+            i++;
+            if ( i == argc ) {
+                printUsage();
+                return 1;
+            }
+            output = argv[i];
         } else if ( input == "" ) {
             input = argv[i];
         }
