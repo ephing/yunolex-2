@@ -128,14 +128,12 @@ void Automata::minimize() {
     bool done;
     do {
         done = true;
-        std::set<IState*> remove;
 
         for ( auto s1 : *_states ) {
             for ( auto s2 : *_states ) {
                 if ( s2 == _startState || s1 == s2 || (s1 < s2 && s1 != _startState) ) continue;
                 if ( s1->semanticallyEquivalent(s2) ) {
                     done = false;
-                    remove.insert(s2);
 
                     // its goin crazy around here parts, remapping incoming edges
                     for ( auto is : *_states ) {
@@ -147,14 +145,13 @@ void Automata::minimize() {
                             }
                         }
                     }
+
+                    // remove s2
+                    _states->erase(s2);
+                    if ( s2->isFinal() ) _finStates.erase(s2);
+                    freeref(s2);
                 }
             }
-        }
-
-        for ( auto s : remove ) {
-            _states->erase(s);
-            if ( s->isFinal() ) _finStates.erase(s);
-            freeref(s);
         }
     } while ( !done );
 }
