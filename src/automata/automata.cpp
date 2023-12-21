@@ -93,13 +93,6 @@ void Automata::__removeUnreachable() {
     auto unvis = *_states;
     __rUHelp(_startState, unvis);
     for ( auto i : unvis ) {
-        for ( auto j : *_states ) {
-            for ( auto e : j->outbound() ) {
-                if ( e->dest() == i ) {
-                    j->removeEdge(e);
-                }
-            }
-        }
         _states->erase(i);
         if ( _finStates.contains(i) ) _finStates.erase(i);
         freeref(i);
