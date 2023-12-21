@@ -59,7 +59,7 @@ public:
     }
 
     [[nodiscard]] std::string name() const override {
-        return "Concatentation";
+        return "Concatenation";
     }
 
     [[nodiscard]] std::string toString() const override {

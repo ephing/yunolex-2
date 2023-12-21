@@ -84,6 +84,14 @@ auto tokenstream = lexer.lex(input);
 </table>
 This table should be extended whenever a new language is supported.
 
+## How to Extend to Another Language
+
+Yunolex currently only supports whatever languages are in [this table](#integrating-with-other-projects). To extend to another language, you simply need to add the lexer template to the `lexers` folder, add it to
+`Printer::instance`, and define a new subclass of
+`Printer` for the new language.
+
+The lexing template should already contain the entire lexer, sans the actual lookup tables/automata created by yunolex. It should also support all features of yunolex.
+
 ## To Do list:
 
 * ~~remake input spec to be toml-esque~~
