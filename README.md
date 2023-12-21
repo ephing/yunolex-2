@@ -2,6 +2,12 @@
 
 Rewrote [this](https://github.com/ephing/yunolex) to be faster, more memory efficient, more readable, and with new features, while maintaining easy extensibility and integration.
 
+## Motivation
+
+Yunolex is a lexer builder much like flex or antlr4. A lexer is a program that takes in some stream of characters (e.g. `10+2`) and converts it into a stream of tokens (e.g. `[(NUMBER:10),(PLUS:+),(NUMBER,2)]`), such that you can write some parser, interpreter or other algorithm in the realm of semantic meaning rather than a character-by-character basis. A lexer *builder*, then, is a program that takes the specification for what the tokens are (the valid values for a token are defined by a regular expression) and outputs a lexer that will lex an input stream with that specification.
+
+This is a long solved problem, with many existing maintained alternatives. However, some, like flex, do not offer great language support and have remarkably unintuitive or complex input formats. Others, like antlr4, are actually predominantly parser builders. Yunolex exists solely so that I could trivially attribute a degree of semantic meaning to any stream of characters in exactly the format *I* wanted.
+
 ## How to use
 
 ### Creating a lexer
