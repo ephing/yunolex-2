@@ -11,7 +11,7 @@ namespace yunolex {
 class ParserException final : public std::exception {
 public:
     ParserException(std::string what) : _what(what) {}
-    ParserException(std::string what, int l, int c) : _what(what + "[" + std::to_string(l) + "," + std::to_string(c) + "]") {}
+    ParserException(std::string what, int l, int c) : _what(what + " [" + std::to_string(l) + "," + std::to_string(c) + "]") {}
     const char* what() const noexcept override { return _what.c_str(); }
 private:
     std::string _what;
@@ -36,6 +36,7 @@ private:
         if ( _input.size() == 0 ) {
             throw ParserException("Unexpected EOF", _line, _col);
         }
+        info(std::cout, "Regexing: " + _input + ", size: " + std::to_string(_input.size()));
     }
 
     ~RegexParser() = default;
@@ -43,7 +44,7 @@ private:
     [[nodiscard]] Node* parseRegex() {
         auto re = concat();
         info(std::cout, "parseRegex got " + re->toString() + " from concat!", true);
-        if ( _index == _input.size() ) return re;
+        if ( _index >= _input.size() ) return re;
         char c = _input[_index];
         if ( c == '|' ) {
             _index++;
@@ -56,19 +57,20 @@ private:
     [[nodiscard]] Node* concat() {
         auto re = basicre();
         info(std::cout, "concat got " + re->toString() + " from basicre!", true);
-        if ( _index == _input.size() || _input[_index] == '|' || _input[_index] == ')' ) return re;
+        if ( _index >= _input.size() || _input[_index] == '|' || _input[_index] == ')' ) return re;
         return new Concatenation(re, concat());
     }
 
     [[nodiscard]] Node* basicre() {
         auto elem = elemre();
         info(std::cout, "basicre got " + elem->toString() + " from elemre!", true);
+        if (_index >= _input.size()) return elem;
         char c = _input[_index];
         while ( c == '*' || c == '+' || c == '?' || c == '{' ) {
             _index++;
             if ( elem->name() == "Interval" ) {
                 auto in = (Interval*)elem;
-                if ( in->upper() != 0 ) { // modifiying nothing yeilds nothing
+                if ( in->upper() != 0 ) { // modifiying nothing yields nothing
                     if ( c == '*' ) { // (regex){x,y}*
                         if ( in->lower() < 2 ) { // choose 1 or 0 from interval every time == star, greater numbers subsumed by star
                             elem = new Star(in->body());
@@ -139,7 +141,7 @@ private:
                             auto temp = (Plus*)elem;
                             elem = useref(temp->right());
                             delete temp;
-                        } // a+{y,x} == a+  (y!=0)
+                        } // a+{y,x} == a+  (y!=0) -- i dont think this is right lmao, should be `a{y,}`
                     } else if ( elem->name() == "Question" ) {
                         auto temp = (Question*)elem;
                         if ( id.upper != 1 ) { // a?{x,1} == a?
@@ -182,14 +184,37 @@ private:
             if ( c == 'n' ) return new Symbol("\\n");
             if ( c == 't' ) return new Symbol("\\t");
             if ( c == 's' ) return new CharacterSelect({" ","\\t","\\n","\\x0B","\\f","\\r"});
+            if ( c == 'd' ) return new CharacterSelect('0', '9');
+            if ( c > 48 && c < 58 ) {
+                std::string num;
+                do {
+                    num += c;
+                    c = _input[_index++];
+                } while ( c > 47 && c < 58 && _index-1 < _input.size() );
+                info(std::cout, "Back reference: " + num);
+                std::size_t i = std::stoi(num);
+                if ( i > _groups.size() ) 
+                    throw ParserException("Invalid Capture Group Index: " + num, _line, _col);
+                return _groups.at(i-1);
+            }
+            if ( c == '(' || c == ')' || c == '[' || c == ']' || c == '|' 
+                || c == '+' || c == '?' || c == '*' || c == '.' || c == '\\'
+                || c == '{' || c == '}' ) return new Symbol(c);
         }
         return new Symbol(c);
     }
 
     [[nodiscard]] Node* group() {
+        bool capture = true;
+        std::cout << _index << "\n";
+        if ( _input.substr(_index, 2) == "?:" ) {
+            capture = false;
+            _index += 2;
+        }
         auto n = parseRegex();
         if ( _input[_index] == ')') _index++;
         else throw ParserException("Invalid Group, expected ')'", _line, _col);
+        if ( capture ) _groups.push_back(n);
         return n;
     }
 
@@ -257,7 +282,7 @@ private:
                 if ( _input[_index] != '}' ) d.upper = 0;
                 continue;
             }
-            if ( c < 48 || c > 57 ) throw ParserException("Unexpected " + std::to_string((char)c) + ", expected digit", _line, _col);
+            if ( c < 48 || c > 57 ) throw ParserException("Unexpected " + std::to_string(c) + ", expected digit", _line, _col);
             if ( d.comma ) {
                 d.upper = d.upper * 10 + c - '0';
             } else {
@@ -270,6 +295,7 @@ private:
 private:
     std::string _input;
     std::size_t _line, _col, _index;
+    std::vector<Node*> _groups;
 };
 
 }

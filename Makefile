@@ -7,7 +7,7 @@ EBIN := $(ECHO) "\033[32m BIN \033[0m"
 
 CXX ?= clang++
 CXXFLAGS = -std=c++20 -Wall
-DBG_CXXFLAGS = $(CXXFLAGS) -DDEBUG -g
+DBG_CXXFLAGS = $(CXXFLAGS) -DDEBUG -DVERBOSE -g
 
 BUILD_DIR ?= ./build
 DBG_BUILD_DIR ?= ./build_dbg

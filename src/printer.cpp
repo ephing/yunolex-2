@@ -50,7 +50,11 @@ void CppPrinter::outputAutomata(std::map<Token*, Automata*>* automata) {
             if ( b ) _outfile << " ";
             _outfile << "{\"" << s->toString() << "\",{";
             for ( auto t : s->outbound() ) {
-                _outfile << "{\'" << t->symbol() << "\',\"" << t->dest()->toString() << "\"},";
+                _outfile << "{\'";
+                if ( t->symbol() == "\'" || t->symbol() == "\"" || t->symbol() == "\\" ) {
+                    _outfile << "\\";
+                }
+                _outfile << t->symbol() << "\',\"" << t->dest()->toString() << "\"},";
             }
             _outfile << "}}," << std::endl << "\t\t\t";
             b = true;

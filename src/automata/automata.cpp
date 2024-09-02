@@ -122,30 +122,58 @@ void Automata::minimize() {
     do {
         done = true;
 
-        for ( auto s1 : *_states ) {
-            for ( auto s2 : *_states ) {
-                if ( s2 == _startState || s1 == s2 || (s1 < s2 && s1 != _startState) ) continue;
-                if ( s1->semanticallyEquivalent(s2) ) {
+        std::vector<IState*> states(_states->begin(), _states->end());
+
+        for ( std::size_t i = 0; i < states.size(); i++ ) {
+            for ( std::size_t j = i + 1; j < states.size(); j++ ) {
+                if ( states[i]->semanticallyEquivalent(states[j]) ) {
                     done = false;
 
                     // its goin crazy around here parts, remapping incoming edges
                     for ( auto is : *_states ) {
-                        if ( is == s2 ) continue;
+                        if ( is == states[j] ) continue;
                         for ( auto t : is->outbound() ) {
-                            if ( t->dest() == s2 ) {
-                                is->addEdge(s1, t->symbol());
+                            if ( t->dest() == states[j] ) {
+                                is->addEdge(states[i], t->symbol());
                                 is->removeEdge(t);
                             }
                         }
                     }
 
-                    // remove s2
-                    _states->erase(s2);
-                    if ( s2->isFinal() ) _finStates.erase(s2);
-                    freeref(s2);
+                    // remove states[j]
+                    _states->erase(states[j]);
+                    if ( states[j]->isFinal() ) _finStates.erase(states[j]);
+                    freeref(states[j]);
+                    states.erase(states.begin() + j);
+                    j--;
                 }
             }
         }
+
+        // for ( auto s1 : *_states ) {
+        //     for ( auto s2 : *_states ) {
+        //         if ( s2 == _startState || s1 == s2 || (s1 < s2 && s1 != _startState) ) continue;
+        //         if ( s1->semanticallyEquivalent(s2) ) {
+        //             done = false;
+
+        //             // its goin crazy around here parts, remapping incoming edges
+        //             for ( auto is : *_states ) {
+        //                 if ( is == s2 ) continue;
+        //                 for ( auto t : is->outbound() ) {
+        //                     if ( t->dest() == s2 ) {
+        //                         is->addEdge(s1, t->symbol());
+        //                         is->removeEdge(t);
+        //                     }
+        //                 }
+        //             }
+
+        //             // remove s2
+        //             _states->erase(s2);
+        //             if ( s2->isFinal() ) _finStates.erase(s2);
+        //             freeref(s2);
+        //         }
+        //     }
+        // }
     } while ( !done );
 }
 

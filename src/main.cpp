@@ -9,6 +9,7 @@ void printUsage() {
     std::cout << "usage: yunolex [-h] [-o FILE] [-l LANG] INPUT" << std::endl;
     std::cout << "  -h, --help  show this help menu and exit" << std::endl;
     std::cout << "  -o FILE     name output file as FILE" << std::endl;
+    std::cout << "  -d DIR      output automata as dot files to DIR" << std::endl;
     //std::cout << "  -l LANG     change output language to LANG (supports CPP)" << std::endl;
 }
 
@@ -20,6 +21,7 @@ int main(int argc, char** argv) {
 
     std::string input = "";
     std::string output = "lexer.h";
+    std::string dotdir = "";
 
     // parse arguments
     for ( int i = 1; i < argc; i++ ) {
@@ -33,6 +35,13 @@ int main(int argc, char** argv) {
                 return 1;
             }
             output = argv[i];
+        } else if ( !strcmp(argv[i], "-d") ) {
+            i++;
+            if ( i == argc ) {
+                printUsage();
+                return 1;
+            }
+            dotdir = std::string(argv[i]);
         } else if ( input == "" ) {
             input = argv[i];
         }
