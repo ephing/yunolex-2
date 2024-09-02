@@ -26,10 +26,11 @@ public:
     }
 private:
     struct IntervalData {
-        IntervalData() : lower(0), upper(-1), comma(false) {}
+        IntervalData() : lower(0), upper(-1) {}
+        // lower bound
         int lower;
+        // upper bound (if -1, no upper bound)
         int upper;
-        bool comma;
     };
 
     RegexParser(std::string input, int startingLine, int startingColumn) : _input(input), _line(startingLine), _col(startingColumn), _index(0) {
@@ -101,7 +102,7 @@ private:
                         } else if ( id.lower == 1 && id.upper == -1 ) {
                             elem = new Plus(elem);
                         } else {
-                            elem = new Interval(elem, id.lower, id.comma ? id.upper : id.lower);
+                            elem = new Interval(elem, id.lower, id.upper);
                         }
                     }
                 }
@@ -141,26 +142,26 @@ private:
                             auto temp = (Plus*)elem;
                             elem = useref(temp->right());
                             delete temp;
-                        } // a+{y,x} == a+  (y!=0) -- i dont think this is right lmao, should be `a{y,}`
+                        } // a+{y,x} == a{y,}
                     } else if ( elem->name() == "Question" ) {
                         auto temp = (Question*)elem;
                         if ( id.upper != 1 ) { // a?{x,1} == a?
-                            if ( id.comma && id.upper == -1 ) { // a?{x,} == a*
+                            if ( id.upper == -1 ) { // a?{x,} == a*
                                 elem = new Star(temp->body());
                             } else { // a?{x,y} == a{0,y}
-                                elem = new Interval(temp->body(), 0, id.comma ? id.upper : id.lower);
+                                elem = new Interval(temp->body(), 0, id.upper);
                             }
                             delete temp;
                         }
                     } else {
                         if ( id.lower == 0 && id.upper == 1 ) {
                             elem = new Question(elem);
-                        } else if ( id.lower == 0 && id.upper == -1 && id.comma ) {
+                        } else if ( id.lower == 0 && id.upper == -1 ) {
                             elem = new Star(elem);
-                        } else if ( id.lower == 1 && id.upper == -1 && id.comma ) {
+                        } else if ( id.lower == 1 && id.upper == -1 ) {
                             elem = new Plus(elem);
                         } else {
-                            elem = new Interval(elem, id.lower, id.comma ? id.upper : id.lower);
+                            elem = new Interval(elem, id.lower, id.upper);
                         }
                     }
                 }
@@ -276,17 +277,19 @@ private:
     IntervalData parseIntervalData() {
         IntervalData d;
         char c;
+        bool comma = false;
         while ( (c = _input[_index++]) != '}' ) {
             if ( c == ',' ) {
-                d.comma = true;
+                comma = true;
                 if ( _input[_index] != '}' ) d.upper = 0;
+                else d.upper = -1;
                 continue;
             }
             if ( c < 48 || c > 57 ) throw ParserException("Unexpected " + std::to_string(c) + ", expected digit", _line, _col);
-            if ( d.comma ) {
+            if ( comma ) {
                 d.upper = d.upper * 10 + c - '0';
             } else {
-                d.lower = d.lower * 10 + c - '0';
+                d.lower = d.upper = d.lower * 10 + c - '0';
             }
         }
         return d;
